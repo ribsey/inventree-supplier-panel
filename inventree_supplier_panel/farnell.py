@@ -15,7 +15,7 @@ class Farnell():
         access_key = self.get_setting('FARNELLSEARCHKEY')
         header = {'Content-type': 'application/json', 'Accept': 'application/json'}
         path = 'https://api.element14.com/catalog/products?'
-        path_string = path + 'term=id:' + sku + '&storeInfo.id=' + store + '&resultsSettings.responseGroup=large&callInfo.responseDataFormat=json&callinfo.apiKey=' + access_key
+        path_string = path + 'versionNumber=1.5&term=id:' + sku + '&storeInfo.id=' + store + '&resultsSettings.responseGroup=large&callInfo.responseDataFormat=json&callinfo.apiKey=' + access_key
         response = Wrappers.get_request(self, path_string, header)
 
         # Try if a valid json has se been received. Otherwise return the content
@@ -46,7 +46,7 @@ class Farnell():
         part_data['price_breaks'] = []
         part_data['SKU'] = response['products'][0]['sku']
         part_data['MPN'] = response['products'][0]['translatedManufacturerPartNumber']
-        part_data['URL'] = 'https://www.element14.com/community/view-product.jspa?fsku=' + sku
+        part_data['URL'] = response['products'][0]['productURL']
         part_data['lifecycle_status'] = response['products'][0]['productStatus']
         # the Farnell translatedMinimumOrderQuality is not a pack quantity as ist is used
         # in Inventree. It is just a minimum order quantity. The reported price is still
