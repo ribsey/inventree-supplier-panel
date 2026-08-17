@@ -8,7 +8,7 @@ from plugin import InvenTreePlugin
 from plugin.mixins import SettingsMixin, UrlsMixin, UserInterfaceMixin
 from company.models import Company, ManufacturerPart, SupplierPart
 from company.models import SupplierPriceBreak
-from users.models import check_user_role
+from users.permissions import check_user_role
 from common.models import InvenTreeSetting
 from .version import PLUGIN_VERSION
 from .mouser import Mouser
