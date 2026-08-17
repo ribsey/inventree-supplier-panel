@@ -31,7 +31,7 @@ class SupplierCartPanel(PanelMixin, SettingsMixin, InvenTreePlugin, UrlsMixin):
     SLUG = "suppliercart"
     TITLE = "Create Shopping Cart"
     AUTHOR = "Michael"
-    PUBLISH_DATE = "2026-05-30:00:00"
+    PUBLISH_DATE = "2026-08-17T00:00:00"
     DESCRIPTION = "This plugin allows to transfer a PO into a supplier shopping cart."
     VERSION = PLUGIN_VERSION
     COUNTRY_CODES = {'AUD': 'AU',
