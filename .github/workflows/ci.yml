@@ -30,9 +30,56 @@ jobs:
         run: |
           flake8 . --ignore=E501,W503
 
+  test-python:
+    name: "🧪 Test: python"
+    needs: [style-python]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+
+      - name: Checkout InvenTree (stable)
+        uses: actions/checkout@v4
+        with:
+          repository: inventree/InvenTree
+          ref: stable
+          path: inventree-src
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install InvenTree requirements
+        run: |
+          # Strip --hash= annotations; their presence triggers --require-hashes mode
+          # which fails on unlisted transitive deps (e.g. ansicon from jinxed).
+          grep -v '^\s*--hash=' inventree-src/src/backend/requirements.txt \
+            | sed 's/ \\$//' \
+            > /tmp/inventree-reqs.txt
+          pip install -r /tmp/inventree-reqs.txt
+
+      - name: Install test dependencies
+        run: pip install httmock pytest pytest-django
+
+      - name: Install plugin
+        run: pip install -e .
+
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/inventree-src/src/backend
+          INVENTREE_DB_ENGINE: django.db.backends.sqlite3
+          INVENTREE_DB_NAME: /tmp/inventree_test.db
+          INVENTREE_SECRET_KEY: ci-test-secret-key-not-for-production
+          INVENTREE_PLUGINS_ENABLED: "true"
+          INVENTREE_MEDIA_ROOT: /tmp/inventree_media
+          INVENTREE_STATIC_ROOT: /tmp/inventree_static
+        run: python -m pytest inventree_supplier_panel/test_supplier_panel.py -v --ds=InvenTree.settings
+
   publish:
     if: github.event_name == 'release' && github.event.action == 'published'
-    needs: [style-python]
+    needs: [style-python, test-python]
     name: 📦 Publish to PyPi
     runs-on: ubuntu-latest
     environment:
@@ -43,7 +90,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 
+        uses: actions/checkout@v4
 
       - name: Setup python
         uses: actions/setup-python@v5

@@ -1,16 +1,15 @@
 from django.http import HttpResponse
 from django.http import JsonResponse
+from django.shortcuts import render
 from django.urls import re_path
 
-from order.views import PurchaseOrderDetail
 from order.models import PurchaseOrder
-from part.views import PartDetail
 from part.models import Part
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, SettingsMixin, UrlsMixin
+from plugin.mixins import UserInterfaceMixin, SettingsMixin, UrlsMixin
 from company.models import Company, ManufacturerPart, SupplierPart
 from company.models import SupplierPriceBreak
-from users.models import check_user_role
+from users.permissions import check_user_role
 from common.models import InvenTreeSetting
 from .version import PLUGIN_VERSION
 from .mouser import Mouser
@@ -23,7 +22,7 @@ import json
 from datetime import datetime
 
 
-class SupplierCartPanel(PanelMixin, SettingsMixin, InvenTreePlugin, UrlsMixin):
+class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, UrlsMixin):
 
     PurchaseOrderPK = 0
 
@@ -146,67 +145,108 @@ class SupplierCartPanel(PanelMixin, SettingsMixin, InvenTreePlugin, UrlsMixin):
         """
 
 # ----------------------------------------------------------------------------
-# Create the panel that will display on the PurchaseOrder view.
+# Create the panel that will display on the PurchaseOrder/Part view.
+# Uses the new UserInterfaceMixin API: context dict instead of a view object.
 
-    def get_custom_panels(self, view, request):
+    def _refresh_supplier_pks(self):
+        """Load supplier PKs from settings into registered_suppliers."""
+        for name, key in (('Mouser', 'MOUSER_PK'), ('Digikey', 'DIGIKEY_PK'), ('Farnell', 'FARNELL_PK')):
+            try:
+                self.registered_suppliers[name]['pk'] = int(self.get_setting(key))
+                self.registered_suppliers[name]['is_registered'] = True
+            except Exception:
+                self.registered_suppliers[name]['is_registered'] = False
+
+    def get_ui_panels(self, request, context, **kwargs):
         panels = []
-        try:
-            self.registered_suppliers['Mouser']['pk'] = int(self.get_setting('MOUSER_PK'))
-            self.registered_suppliers['Mouser']['is_registered'] = True
-        except Exception:
-            self.registered_suppliers['Mouser']['is_registered'] = False
-        try:
-            self.registered_suppliers['Digikey']['pk'] = int(self.get_setting('DIGIKEY_PK'))
-            self.registered_suppliers['Digikey']['is_registered'] = True
-        except Exception:
-            self.registered_suppliers['Digikey']['is_registered'] = False
-        try:
-            self.registered_suppliers['Farnell']['pk'] = int(self.get_setting('FARNELL_PK'))
-            self.registered_suppliers['Farnell']['is_registered'] = True
-        except Exception:
-            self.registered_suppliers['Farnell']['is_registered'] = False
+        self._refresh_supplier_pks()
 
-        # For purchase orders: PO transfer
-        if isinstance(view, PurchaseOrderDetail):
-            order = view.get_object()
-            has_permission = (check_user_role(view.request.user, 'purchase_order', 'change')
-                              or check_user_role(view.request.user, 'purchase_order', 'delete')
-                              or check_user_role(view.request.user, 'purchase_order', 'add'))
+        target_model = context.get('target_model', None)
+        target_id = context.get('target_id', None)
 
-            for s in self.registered_suppliers:
-                if order.supplier.pk == self.registered_suppliers[s]['pk'] and has_permission:
-                    panels.append({
-                        'title': self.registered_suppliers[s]['name'] + ' Actions',
-                        'icon': 'fa-user',
-                        'content_template': self.registered_suppliers[s]['po_template'],
-                    })
+        # For purchase orders: PO transfer to supplier cart
+        if target_model == 'purchaseorder' and target_id:
+            try:
+                order = PurchaseOrder.objects.get(pk=target_id)
+                has_permission = (check_user_role(request.user, 'purchase_order', 'change')
+                                  or check_user_role(request.user, 'purchase_order', 'delete')
+                                  or check_user_role(request.user, 'purchase_order', 'add'))
+                for s in self.registered_suppliers:
+                    if order.supplier.pk == self.registered_suppliers[s]['pk'] and has_permission:
+                        panels.append({
+                            'key': f'supplier-cart-{s.lower()}',
+                            'title': self.registered_suppliers[s]['name'] + ' Actions',
+                            'icon': 'fa-shopping-cart',
+                            'source': self.plugin_static_file('mouser_panel.js'),
+                            'context': {
+                                'order_pk': target_id,
+                                'panel_url': f'/{self.base_url}po-panel/{target_id}/',
+                            },
+                        })
+            except (PurchaseOrder.DoesNotExist, ValueError):
+                pass
 
         # For parts: Supplier part creation
-        if isinstance(view, PartDetail):
-            has_permission = (check_user_role(view.request.user, 'part', 'change')
-                              or check_user_role(view.request.user, 'part', 'delete')
-                              or check_user_role(view.request.user, 'part', 'add'))
-            show_panel = False
-            for s in self.registered_suppliers:
-                show_panel = show_panel or self.registered_suppliers[s]['is_registered']
-            part = view.get_object()
-            self.manufacturer_parts = ManufacturerPart.objects.filter(part=part.pk)
-            if has_permission and show_panel and part.purchaseable:
-                panels.append({
-                    'title': 'Automatic Supplier parts',
-                    'icon': 'fa-user',
-                    'content_template': 'supplier_panel/add_supplierpart.html',
-                })
+        if target_model == 'part' and target_id:
+            has_permission = (check_user_role(request.user, 'part', 'change')
+                              or check_user_role(request.user, 'part', 'delete')
+                              or check_user_role(request.user, 'part', 'add'))
+            show_panel = any(self.registered_suppliers[s]['is_registered'] for s in self.registered_suppliers)
+            try:
+                part = Part.objects.get(pk=target_id)
+                if has_permission and show_panel and part.purchaseable:
+                    panels.append({
+                        'key': 'supplier-part-add',
+                        'title': 'Automatic Supplier parts',
+                        'icon': 'fa-tag',
+                        'source': self.plugin_static_file('add_supplierpart_panel.js'),
+                        'context': {
+                            'part_pk': target_id,
+                            'panel_url': f'/{self.base_url}part-panel/{target_id}/',
+                        },
+                    })
+            except (Part.DoesNotExist, ValueError):
+                pass
+
         return panels
+
+# ----------------------------------------------------------------------------
+# Server-side panel content rendering (fetched by the JS panel sources).
+
+    def render_po_panel(self, request, pk):
+        try:
+            order = PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return HttpResponse('Order not found', status=404)
+        metadata_json = json.dumps(order.metadata) if order.metadata else '{}'
+        return render(request, 'supplier_panel/mouser.html', {
+            'order': order,
+            'metadata_json': metadata_json,
+            'plugin': self,
+        })
+
+    def render_part_panel(self, request, pk):
+        try:
+            part = Part.objects.get(pk=pk)
+        except Part.DoesNotExist:
+            return HttpResponse('Part not found', status=404)
+        self._refresh_supplier_pks()
+        self.manufacturer_parts = ManufacturerPart.objects.filter(part=part.pk)
+        return render(request, 'supplier_panel/add_supplierpart.html', {
+            'part': part,
+            'plugin': self,
+        })
 
     def setup_urls(self):
         return [
-            # This one is for the Digikey OAuth callback
+            # Digikey OAuth callback
             re_path(r'^digikeytoken/', self.receive_authcode, name='digikeytoken'),
-
-            # Now for the plugin
+            # Cart transfer and supplier part creation
             re_path(r'transfercart/(?P<pk>\d+)/', self.transfer_cart, name='transfer-cart'),
             re_path(r'addsupplierpart(?:\.(?P<format>json))?$', self.add_supplierpart, name='add-supplierpart'),
+            # Server-side panel HTML rendering (consumed by JS panel sources)
+            re_path(r'po-panel/(?P<pk>\d+)/', self.render_po_panel, name='po-panel'),
+            re_path(r'part-panel/(?P<pk>\d+)/', self.render_part_panel, name='part-panel'),
         ]
 
 # --------------------------- get_partdata ------------------------------------
