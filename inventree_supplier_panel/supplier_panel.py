@@ -130,7 +130,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
 
         redirect_uri = ''
         if base_url:
-            redirect_uri = f'{base_url.rstrip('/')}/{self.base_url}digikeytoken/'
+            redirect_uri = f"{base_url.rstrip('/')}/{self.base_url}digikeytoken/"
 
         return {
             'docs_url': 'https://github.com/SergeoLacruz/inventree-supplier-panel',
@@ -182,9 +182,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                 order = None
 
             has_permission = (
-                check_user_role(request.user, 'purchase_order', 'change')
-                or check_user_role(request.user, 'purchase_order', 'delete')
-                or check_user_role(request.user, 'purchase_order', 'add')
+                check_user_role(request.user, 'purchase_order', 'change') or check_user_role(request.user, 'purchase_order', 'delete') or check_user_role(request.user, 'purchase_order', 'add')
             )
 
             if order and has_permission:
@@ -213,9 +211,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                 part = None
 
             has_permission = (
-                check_user_role(request.user, 'part', 'change')
-                or check_user_role(request.user, 'part', 'delete')
-                or check_user_role(request.user, 'part', 'add')
+                check_user_role(request.user, 'part', 'change') or check_user_role(request.user, 'part', 'delete') or check_user_role(request.user, 'part', 'add')
             )
 
             show_panel = any(s['is_registered'] for s in self.registered_suppliers.values())
