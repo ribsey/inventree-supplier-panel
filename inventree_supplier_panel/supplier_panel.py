@@ -40,7 +40,8 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                      'JPY': 'JP',
                      'NZD': 'NZ',
                      'USD': 'US',
-                     'EUR': 'DE'
+                     'EUR': 'DE',
+                     'CHF': 'CH'
                      }
 
     SETTINGS = {
