@@ -303,6 +303,41 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
 
         return panels
 
+    # ----------------------------------------------------------------------------
+    # Server-side panel content rendering (fetched by the JS panel sources).
+
+    def render_po_panel(self, request, pk):
+        try:
+            order = PurchaseOrder.objects.get(pk=pk)
+        except PurchaseOrder.DoesNotExist:
+            return HttpResponse("Order not found", status=404)
+        metadata_json = json.dumps(order.metadata) if order.metadata else "{}"
+        return render(
+            request,
+            "supplier_panel/mouser.html",
+            {
+                "order": order,
+                "metadata_json": metadata_json,
+                "plugin": self,
+            },
+        )
+
+    def render_part_panel(self, request, pk):
+        try:
+            part = Part.objects.get(pk=pk)
+        except Part.DoesNotExist:
+            return HttpResponse("Part not found", status=404)
+        self._refresh_supplier_pks()
+        self.manufacturer_parts = ManufacturerPart.objects.filter(part=part.pk)
+        return render(
+            request,
+            "supplier_panel/add_supplierpart.html",
+            {
+                "part": part,
+                "plugin": self,
+            },
+        )
+
     def setup_urls(self):
         return [
             # This one is for the Digikey OAuth callback
