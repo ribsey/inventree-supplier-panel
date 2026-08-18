@@ -32,6 +32,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
     PUBLISH_DATE = "2026-08-17T00:00:00"
     DESCRIPTION = "This plugin allows to transfer a PO into a supplier shopping cart."
     VERSION = PLUGIN_VERSION
+    ADMIN_SOURCE = 'ui_settings.js'
     COUNTRY_CODES = {'AUD': 'AU',
                      'CAD': 'CA',
                      'CNY': 'CN',
@@ -88,10 +89,12 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
         'DIGIKEY_TOKEN': {
             'name': 'Digikey token',
             'description': 'Token for Digikey',
+            'hidden': True,
         },
         'DIGIKEY_REFRESH_TOKEN': {
             'name': 'Digikey refresh token',
             'description': 'Digikey Refresh token',
+            'hidden': True,
         },
         'PROXY_CON': {
             'name': 'Proxy CON',
@@ -109,39 +112,32 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
 # If the pk of the supplier is not set ein tne settings, the supplier is
 # disabled. The button for Digikey token creation is also here.
 
-    def get_settings_content(self, request):
-        client_id = self.get_setting('DIGIKEY_CLIENT_ID')
-        base_url = InvenTreeSetting.get_setting('INVENTREE_BASE_URL')
+    def get_admin_context(self):
+        base_url = InvenTreeSetting.get_setting('INVENTREE_BASE_URL') or ''
+        client_id = self.get_setting('DIGIKEY_CLIENT_ID') or ''
+
         if base_url == '':
-            base_url_state = '<span class="badge badge-left rounded-pill bg-danger">Missing</span>'
-        elif base_url[0:5] != 'https':
-            base_url_state = '<span class="badge badge-left rounded-pill bg-danger">Server does not run https</span>'
+            base_url_state = 'missing'
+            base_url_message = 'Missing'
+        elif not base_url.startswith('https'):
+            base_url_state = 'error'
+            base_url_message = 'Server does not run https'
         else:
-            base_url_state = '<span class="badge badge-left rounded-pill bg-success">OK</span>'
-        redirect_uri = f'{base_url}/{self.base_url}digikeytoken/'
-        url = f'https://api.digikey.com/v1/oauth2/authorize?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}'
-        return f"""
-        <p>Setup:</p>
-        <ol>
-        <li>Read the <a href="https://github.com/SergeoLacruz/inventree-supplier-panel"> docu </a> on github</li>
-        <li>Enable the plugin</li>
-        <li>Put all required keys into settings</li>
-        <li>Enjoy</li>
-        <li>Remove the shopping carts and lists regularly from your accounts</li>
-        </ol>
-        <p>Status:</p>
-        <table class='table table-condensed'>
-           <tr>
-           <td>Server Base URL</td><td>{base_url_state}</td>
-           </tr>
-           <tr>
-           <td>Callback URL (Add this to your Digikey account)</td><td>{redirect_uri}</td>
-           </tr>
-        </table>
-        <a class="btn btn-dark" onclick="window.open('{url}','name','width=1000px,height=800px')"">
-         Create Digikey Token
-        </a>
-        """
+            base_url_state = 'ok'
+            base_url_message = 'OK'
+
+        redirect_uri = ''
+        if base_url:
+            redirect_uri = f'{base_url.rstrip('/')}/{self.base_url}digikeytoken/'
+
+        return {
+            'docs_url': 'https://github.com/SergeoLacruz/inventree-supplier-panel',
+            'client_id': client_id,
+            'base_url_state': base_url_state,
+            'base_url_message': base_url_message,
+            'redirect_uri': redirect_uri,
+            'oauth_authorize_url': 'https://api.digikey.com/v1/oauth2/authorize',
+        }
 
 # ----------------------------------------------------------------------------
 # Create custom panels for the new UserInterfaceMixin implementation.

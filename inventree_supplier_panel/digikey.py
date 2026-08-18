@@ -146,7 +146,7 @@ class Digikey():
         cart_items = []
         for item in order.lines.all():
             cart_items.append({'RequestedPartNumber': item.part.SKU,
-                               'Quantities': [{'Quantity': int(item.quantity) * int(item.part.pack_quantity)}],
+                               'Quantities': [{'Quantity': int(item.quantity) * int(item.part.pack_quantity_native)}],
                                'CustomerReference': item.part.part.IPN
                                })
         # The post equest just generates the list in the Digikey cloud
@@ -265,10 +265,10 @@ class Digikey():
             pass
         print('\033[32mToken refresh SUCCESS\033[0m')
         response_data = response.json()
-        self.set_setting('DIGIKEY_TOKEN', response_data['access_token'])
-        self.set_setting('DIGIKEY_REFRESH_TOKEN', response_data['refresh_token'])
+        self.set_setting('DIGIKEY_TOKEN', response_data.get('access_token'))
+        self.set_setting('DIGIKEY_REFRESH_TOKEN', response_data.get('refresh_token'))
         token['status_code'] = response.status_code
         token['message'] = 'success'
-        token['acces_token'] = response_data['access_token']
-        token['refresh_token'] = response_data['refresh_token']
+        token['access_token'] = response_data.get('access_token')
+        token['refresh_token'] = response_data.get('refresh_token')
         return (token)
