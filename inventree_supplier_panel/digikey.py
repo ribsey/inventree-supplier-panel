@@ -215,12 +215,14 @@ class Digikey():
                                    })
 
         # Digikey does not return a currency code. So we take the one from the settings.
-        shopping_cart = {'MerchandiseTotal': merchandise_total,
-                         'CartItems': cart_items,
-                         'cart_key': MetaAccess.get_value(self, order, 'DigiKeyListName'),
-                         'currency_code': InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY'),
-                         }
-        shopping_cart['error_status'] = 'OK'
+        shopping_cart = {
+            'MerchandiseTotal': merchandise_total,
+            'CartItems': cart_items,
+            'cart_key': MetaAccess.get_value(self, order, 'DigiKeyListName'),
+            'currency_code': InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY'),
+            'error_status': 'OK',
+            'ID': list_id,
+        }
         return (shopping_cart)
 
     # ------------------------------- get_parts_in_list ----------------------

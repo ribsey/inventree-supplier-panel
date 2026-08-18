@@ -173,14 +173,24 @@ export function renderSupplierCartPanel(target, data) {
     <b>Cart date:</b> <span id="suppliercart-cart-date"></span>
     <br>
     <div id="suppliercart-dynamic-table"></div>
+    <button type="button" class="btn btn-dark" id="suppliercart-open-btn" title="Open Supplier Cart">
+      <span class="fas fa-external-link-alt"></span> Open Supplier Cart
+    </button>
   `;
 
   const transferButton = target.querySelector('#suppliercart-transfer-btn');
+  const openButton = target.querySelector('#suppliercart-open-btn');
   const loader = target.querySelector('#suppliercart-loader');
   const result = target.querySelector('#suppliercart-result');
   const cartKey = target.querySelector('#suppliercart-cart-key');
   const cartDate = target.querySelector('#suppliercart-cart-date');
   const tableTarget = target.querySelector('#suppliercart-dynamic-table');
+  const cartBaseUrl = 'https://www.digikey.ch/de/mylists/list/';
+  let currentCartId = '';
+
+  function updateOpenButtonState() {
+    openButton.disabled = !currentCartId;
+  }
 
   function applyCartData(cartData) {
     if (!cartData) {
@@ -189,8 +199,20 @@ export function renderSupplierCartPanel(target, data) {
 
     cartKey.textContent = cartData.cart_key || '';
     cartDate.textContent = cartData.cart_date || '';
+    currentCartId = cartData.ID || '';
+    updateOpenButtonState();
     renderTable(tableTarget, cartData);
   }
+
+  openButton.addEventListener('click', () => {
+    if (!currentCartId) {
+      return;
+    }
+
+    window.open(`${cartBaseUrl}${encodeURIComponent(currentCartId)}`, '_blank', 'noopener,noreferrer');
+  });
+
+  updateOpenButtonState();
 
   if (panelContext.cart) {
     applyCartData(panelContext.cart);
