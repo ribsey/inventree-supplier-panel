@@ -2,6 +2,7 @@
 # a dict with plugin name so that the data from different plugins does
 # not overlap
 
+
 class MetaAccess:
 
     def get_value(self, inventree_object, key):
@@ -9,7 +10,7 @@ class MetaAccess:
             value = inventree_object.metadata[self.NAME][key]
         except KeyError:
             value = None
-        return (value)
+        return value
 
     def set_value(self, inventree_object, key, value):
         data = inventree_object.metadata
