@@ -176,7 +176,8 @@ class Mouser():
     # This might not always fit.
 
     def update_mouser_cart(self, order, cart_key):
-        country_code = self.COUNTRY_CODES[InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY')]
+        country_code = self.COUNTRY_CODES.get(InvenTreeSetting.get_setting(
+            'INVENTREE_DEFAULT_CURRENCY'), self.DEFAULT_COUNTRY_CODE)
         cart_items = []
         shopping_cart = {}
 

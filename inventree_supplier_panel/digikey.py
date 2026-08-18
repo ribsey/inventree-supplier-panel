@@ -23,7 +23,7 @@ class Digikey():
         # replace invalid characters in the partnumber
         sku = quote(sku, safe='')
         url = f'https://api.digikey.com/products/v4/search/{sku}/productdetails'
-        country_code = self.COUNTRY_CODES[InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY')]
+        country_code = self.COUNTRY_CODES.get(InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY'), self.DEFAULT_COUNTRY_CODE)
         header = {
             'Authorization': f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",
             'X-DIGIKEY-Client-Id': self.get_setting('DIGIKEY_CLIENT_ID'),
@@ -226,7 +226,7 @@ class Digikey():
     # ------------------------------- get_parts_in_list ----------------------
     def get_parts_in_list(self, list_id):
         currency_code = InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY')
-        country_code = self.COUNTRY_CODES[currency_code]
+        country_code = self.COUNTRY_CODES.get(currency_code, self.DEFAULT_COUNTRY_CODE)
         url = f'https://api.digikey.com/mylists/v1/lists/{list_id}/parts/?countryIso={country_code}&currencyIso={currency_code}&languageIso={country_code}'
         header = {
             'Authorization': f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",

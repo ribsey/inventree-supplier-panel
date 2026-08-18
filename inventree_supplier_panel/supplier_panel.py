@@ -43,6 +43,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                      'EUR': 'DE',
                      'CHF': 'CH'
                      }
+    DEFAULT_COUNTRY_CODE = 'US'
 
     SETTINGS = {
         'MOUSER_PK': {
