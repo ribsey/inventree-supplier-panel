@@ -1,24 +1,22 @@
-from django.http import HttpResponse
-from django.http import JsonResponse
-from django.urls import re_path, reverse
+import json
+from datetime import datetime
 
+from common.models import InvenTreeSetting
+from company.models import Company, ManufacturerPart, SupplierPart, SupplierPriceBreak
+from django.http import HttpResponse, JsonResponse
+from django.urls import re_path, reverse
 from order.models import PurchaseOrder
 from part.models import Part
 from plugin import InvenTreePlugin
 from plugin.mixins import SettingsMixin, UrlsMixin, UserInterfaceMixin
-from company.models import Company, ManufacturerPart, SupplierPart
-from company.models import SupplierPriceBreak
 from users.permissions import check_user_role
-from common.models import InvenTreeSetting
-from .version import PLUGIN_VERSION
-from .mouser import Mouser
+
 from .digikey import Digikey
 from .farnell import Farnell
 from .meta_access import MetaAccess
+from .mouser import Mouser
 from .request_wrappers import Wrappers
-
-import json
-from datetime import datetime
+from .version import PLUGIN_VERSION
 
 
 class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, UrlsMixin):

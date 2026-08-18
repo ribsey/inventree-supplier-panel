@@ -1,10 +1,11 @@
-import requests
 import os
+
+import requests
 
 
 # ----------------------------------------------------------------------------
 # Wrappers around the requests for better error handling
-class Wrappers():
+class Wrappers:
 
     def post_request(self, post_data, path, headers):
         proxy_con = os.getenv('PROXY_CON')

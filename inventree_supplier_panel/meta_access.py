@@ -2,7 +2,7 @@
 # a dict with plugin name so that the data from different plugins does
 # not overlap
 
-class MetaAccess():
+class MetaAccess:
 
     def get_value(self, inventree_object, key):
         try:

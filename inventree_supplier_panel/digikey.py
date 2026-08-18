@@ -1,12 +1,13 @@
+import json
+from urllib.parse import quote
+
 from common.models import InvenTreeSetting
 
-from inventree_supplier_panel.request_wrappers import Wrappers
 from inventree_supplier_panel.meta_access import MetaAccess
-from urllib.parse import quote
-import json
+from inventree_supplier_panel.request_wrappers import Wrappers
 
 
-class Digikey():
+class Digikey:
 
     # --------------------------- get_digikey_partdata ----------------------------
     # This part is for the new digikey search V4. In case of problems, the V3

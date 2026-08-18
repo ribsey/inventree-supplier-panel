@@ -46,14 +46,15 @@ If you created more than 1000 requests within 24 hours:
            ], 'SearchResults': None}
 
 """
+import json
+import re
+
 from common.models import InvenTreeSetting
 
 from inventree_supplier_panel.request_wrappers import Wrappers
-import re
-import json
 
 
-class Mouser():
+class Mouser:
     # --------------------------- get_mouser_partdata -----------------------------
     def get_mouser_partdata(self, sku, options):
 

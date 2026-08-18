@@ -1,7 +1,7 @@
 from inventree_supplier_panel.request_wrappers import Wrappers
 
 
-class Farnell():
+class Farnell:
     # --------------------------- get_farnell_partdata -----------------------------
     def get_farnell_partdata(self, sku, options):
 
