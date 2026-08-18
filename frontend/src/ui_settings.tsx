@@ -1,6 +1,6 @@
+import type { InvenTreePluginContext } from '@inventreedb/ui';
 import { Alert, Button, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import type { InvenTreePluginContext } from '@inventreedb/ui';
 
 type SettingsContext = {
   oauth_authorize_url?: string;
