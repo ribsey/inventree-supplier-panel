@@ -208,7 +208,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
 
         try:
             target_id = int(target_id)
-        except ValueError:
+        except (ValueError, TypeError):
             target_id = None
 
         self._update_registered_suppliers()
