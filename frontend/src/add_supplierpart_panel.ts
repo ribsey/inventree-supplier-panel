@@ -1,4 +1,4 @@
-import type { InvenTreePluginContext } from "@inventreedb/ui";
+import type { InvenTreePluginContext } from '@inventreedb/ui';
 
 type Supplier = {
   pk: number;
@@ -18,12 +18,12 @@ type AddSupplierPartContext = {
 };
 
 function ensureStyles(): void {
-  if (document.getElementById("suppliercart-add-part-style")) {
+  if (document.getElementById('suppliercart-add-part-style')) {
     return;
   }
 
-  const style = document.createElement("style");
-  style.id = "suppliercart-add-part-style";
+  const style = document.createElement('style');
+  style.id = 'suppliercart-add-part-style';
   style.textContent = `
     .suppliercart-wheel {
       border: 5px solid #f3f3f3;
@@ -45,43 +45,43 @@ function ensureStyles(): void {
 }
 
 function getCsrfToken(): string {
-  const cookies = document.cookie.split(";").map((item) => item.trim());
+  const cookies = document.cookie.split(';').map((item) => item.trim());
 
   for (const cookie of cookies) {
-    if (cookie.startsWith("csrftoken=")) {
-      return decodeURIComponent(cookie.slice("csrftoken=".length));
+    if (cookie.startsWith('csrftoken=')) {
+      return decodeURIComponent(cookie.slice('csrftoken='.length));
     }
   }
 
-  return "";
+  return '';
 }
 
 function setResult(target: HTMLElement, message: string): void {
   target.textContent = message;
 
-  if (message === "OK") {
-    target.className = "alert alert-block alert-success";
+  if (message === 'OK') {
+    target.className = 'alert alert-block alert-success';
   } else {
-    target.className = "alert alert-block alert-danger";
+    target.className = 'alert alert-block alert-danger';
   }
 }
 
 function renderOptions<T extends Record<string, string | number>>(
   items: T[],
   valueKey: keyof T,
-  labelKey: keyof T,
+  labelKey: keyof T
 ): string {
   return items
     .map(
       (item) =>
-        `<option value="${String(item[valueKey])}">${String(item[labelKey])}</option>`,
+        `<option value="${String(item[valueKey])}">${String(item[labelKey])}</option>`
     )
-    .join("");
+    .join('');
 }
 
 export function renderAddSupplierPartPanel(
   target: HTMLElement | null,
-  data: InvenTreePluginContext,
+  data: InvenTreePluginContext
 ): void {
   if (!target) {
     return;
@@ -109,17 +109,17 @@ export function renderAddSupplierPartPanel(
           <td>Select Supplier</td>
           <td>
             <select id="suppliercart-supplier">
-              ${renderOptions(suppliers, "pk", "name")}
+              ${renderOptions(suppliers, 'pk', 'name')}
             </select>
           </td>
         </tr>
         <tr>
           <td>
-            ${hasManufacturerPart ? "Select Manufacturer Part" : '<span style="color:red;">Part has no manufacturer part</span>'}
+            ${hasManufacturerPart ? 'Select Manufacturer Part' : '<span style="color:red;">Part has no manufacturer part</span>'}
           </td>
           <td>
             <select id="suppliercart-manufacturer-part">
-              ${renderOptions(manufacturerParts, "pk", "MPN")}
+              ${renderOptions(manufacturerParts, 'pk', 'MPN')}
             </select>
           </td>
         </tr>
@@ -139,7 +139,7 @@ export function renderAddSupplierPartPanel(
       <tfoot>
         <tr>
           <td>
-            <button type="button" class="btn btn-dark" id="suppliercart-add-button" ${hasManufacturerPart ? "" : "disabled"}>Add Part</button>
+            <button type="button" class="btn btn-dark" id="suppliercart-add-button" ${hasManufacturerPart ? '' : 'disabled'}>Add Part</button>
           </td>
           <td></td>
         </tr>
@@ -148,68 +148,68 @@ export function renderAddSupplierPartPanel(
   `;
 
   const resultNode = target.querySelector<HTMLElement>(
-    "#suppliercart-add-result",
+    '#suppliercart-add-result'
   );
   const loaderNode = target.querySelector<HTMLElement>(
-    "#suppliercart-add-loader",
+    '#suppliercart-add-loader'
   );
   const addButton = target.querySelector<HTMLButtonElement>(
-    "#suppliercart-add-button",
+    '#suppliercart-add-button'
   );
 
   if (!resultNode || !loaderNode || !addButton) {
     return;
   }
 
-  addButton.addEventListener("click", async () => {
-    const skuNode = target.querySelector<HTMLInputElement>("#suppliercart-sku");
+  addButton.addEventListener('click', async () => {
+    const skuNode = target.querySelector<HTMLInputElement>('#suppliercart-sku');
     const supplierNode = target.querySelector<HTMLSelectElement>(
-      "#suppliercart-supplier",
+      '#suppliercart-supplier'
     );
     const manufacturerPartNode = target.querySelector<HTMLSelectElement>(
-      "#suppliercart-manufacturer-part",
+      '#suppliercart-manufacturer-part'
     );
     const ignoreMpnNode = target.querySelector<HTMLInputElement>(
-      "#suppliercart-ignore-mpn",
+      '#suppliercart-ignore-mpn'
     );
 
     if (!skuNode || !supplierNode || !manufacturerPartNode || !ignoreMpnNode) {
-      setResult(resultNode, "Missing required fields");
+      setResult(resultNode, 'Missing required fields');
       return;
     }
 
     if (!panelContext.add_supplierpart_url) {
-      setResult(resultNode, "Target URL is missing");
+      setResult(resultNode, 'Target URL is missing');
       return;
     }
 
     const payload = {
-      sku: skuNode.value || "",
+      sku: skuNode.value || '',
       supplier: Number(supplierNode.value),
       pk: Number(panelContext.part_id),
       mpart: Number(manufacturerPartNode.value),
-      ignoreMPNCheck: Boolean(ignoreMpnNode.checked),
+      ignoreMPNCheck: Boolean(ignoreMpnNode.checked)
     };
 
-    loaderNode.style.visibility = "visible";
+    loaderNode.style.visibility = 'visible';
 
     try {
       const response = await fetch(panelContext.add_supplierpart_url, {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": getCsrfToken(),
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken()
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
       const responseData = (await response.json()) as { message?: string };
-      setResult(resultNode, responseData.message || "Error");
+      setResult(resultNode, responseData.message || 'Error');
     } catch {
-      setResult(resultNode, "Request failed");
+      setResult(resultNode, 'Request failed');
     } finally {
-      loaderNode.style.visibility = "hidden";
+      loaderNode.style.visibility = 'hidden';
     }
   });
 }

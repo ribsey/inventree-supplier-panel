@@ -1,4 +1,4 @@
-import type { InvenTreePluginContext } from "@inventreedb/ui";
+import type { InvenTreePluginContext } from '@inventreedb/ui';
 
 type CartItem = {
   IPN?: string;
@@ -26,12 +26,12 @@ type PanelContext = {
 };
 
 function ensureStyles(): void {
-  if (document.getElementById("suppliercart-po-panel-style")) {
+  if (document.getElementById('suppliercart-po-panel-style')) {
     return;
   }
 
-  const style = document.createElement("style");
-  style.id = "suppliercart-po-panel-style";
+  const style = document.createElement('style');
+  style.id = 'suppliercart-po-panel-style';
   style.textContent = `
     .suppliercart-wheel {
       border: 5px solid #f3f3f3;
@@ -68,49 +68,49 @@ function formatNumber(value: number | string | undefined): string {
     return numberValue.toFixed(4);
   }
 
-  return value != null ? String(value) : "";
+  return value != null ? String(value) : '';
 }
 
 function showResult(resultNode: HTMLElement, message: string): void {
   resultNode.textContent = message;
 
-  if (message === "OK") {
-    resultNode.className = "alert alert-block alert-success";
+  if (message === 'OK') {
+    resultNode.className = 'alert alert-block alert-success';
   } else {
-    resultNode.className = "alert alert-block alert-danger";
+    resultNode.className = 'alert alert-block alert-danger';
   }
 }
 
 function renderTable(
   targetNode: HTMLElement,
-  cartData: CartData | undefined,
+  cartData: CartData | undefined
 ): void {
-  targetNode.innerHTML = "";
+  targetNode.innerHTML = '';
 
   if (!cartData || !Array.isArray(cartData.CartItems)) {
     return;
   }
 
-  const table = document.createElement("table");
+  const table = document.createElement('table');
   table.className =
-    "table table-condensed suppliercart-align-right-6 suppliercart-align-right-7";
+    'table table-condensed suppliercart-align-right-6 suppliercart-align-right-7';
 
   const headers = [
-    "IPN",
-    "SKU",
-    "Required",
-    "Available",
-    "Status",
-    "Price",
-    "Total",
-    "Notes",
+    'IPN',
+    'SKU',
+    'Required',
+    'Available',
+    'Status',
+    'Price',
+    'Total',
+    'Notes'
   ];
 
-  const thead = document.createElement("thead");
-  const headRow = document.createElement("tr");
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
 
   for (const headerText of headers) {
-    const th = document.createElement("th");
+    const th = document.createElement('th');
     th.textContent = headerText;
     headRow.appendChild(th);
   }
@@ -118,36 +118,36 @@ function renderTable(
   thead.appendChild(headRow);
   table.appendChild(thead);
 
-  const tbody = document.createElement("tbody");
+  const tbody = document.createElement('tbody');
 
   for (const item of cartData.CartItems) {
-    const tr = document.createElement("tr");
+    const tr = document.createElement('tr');
 
     const cells = [
       item.IPN,
       item.SKU,
       item.QuantityRequested,
       item.QuantityAvailable,
-      "",
+      '',
       formatNumber(item.UnitPrice),
       formatNumber(item.ExtendedPrice),
-      item.Error,
+      item.Error
     ];
 
     cells.forEach((cellValue, index) => {
-      const td = document.createElement("td");
+      const td = document.createElement('td');
 
       if (index === 4) {
-        td.classList.add("badge", "badge-left", "rounded-pill");
+        td.classList.add('badge', 'badge-left', 'rounded-pill');
         if (Number(item.QuantityRequested) < Number(item.QuantityAvailable)) {
-          td.classList.add("bg-success");
-          td.textContent = "OK";
+          td.classList.add('bg-success');
+          td.textContent = 'OK';
         } else {
-          td.classList.add("bg-danger");
-          td.textContent = "Not OK";
+          td.classList.add('bg-danger');
+          td.textContent = 'Not OK';
         }
       } else {
-        td.textContent = cellValue != null ? String(cellValue) : "";
+        td.textContent = cellValue != null ? String(cellValue) : '';
       }
 
       tr.appendChild(td);
@@ -158,24 +158,24 @@ function renderTable(
 
   table.appendChild(tbody);
 
-  const tfoot = document.createElement("tfoot");
-  const footRow = document.createElement("tr");
+  const tfoot = document.createElement('tfoot');
+  const footRow = document.createElement('tr');
   const footer = [
-    "",
-    "",
-    "",
-    "",
-    "Total",
-    cartData.currency_code ?? "",
+    '',
+    '',
+    '',
+    '',
+    'Total',
+    cartData.currency_code ?? '',
     formatNumber(cartData.MerchandiseTotal),
-    "",
+    ''
   ];
 
   footer.forEach((item, index) => {
-    const td = document.createElement("td");
+    const td = document.createElement('td');
     td.textContent = item;
     if (index >= 5) {
-      td.style.textAlign = "right";
+      td.style.textAlign = 'right';
     }
     footRow.appendChild(td);
   });
@@ -188,7 +188,7 @@ function renderTable(
 
 export function renderSupplierCartPanel(
   target: HTMLElement | null,
-  data: InvenTreePluginContext,
+  data: InvenTreePluginContext
 ): void {
   if (!target) {
     return;
@@ -215,17 +215,17 @@ export function renderSupplierCartPanel(
   `;
 
   const transferButton = target.querySelector<HTMLButtonElement>(
-    "#suppliercart-transfer-btn",
+    '#suppliercart-transfer-btn'
   );
   const openButton = target.querySelector<HTMLButtonElement>(
-    "#suppliercart-open-btn",
+    '#suppliercart-open-btn'
   );
-  const loader = target.querySelector<HTMLElement>("#suppliercart-loader");
-  const result = target.querySelector<HTMLElement>("#suppliercart-result");
-  const cartKey = target.querySelector<HTMLElement>("#suppliercart-cart-key");
-  const cartDate = target.querySelector<HTMLElement>("#suppliercart-cart-date");
+  const loader = target.querySelector<HTMLElement>('#suppliercart-loader');
+  const result = target.querySelector<HTMLElement>('#suppliercart-result');
+  const cartKey = target.querySelector<HTMLElement>('#suppliercart-cart-key');
+  const cartDate = target.querySelector<HTMLElement>('#suppliercart-cart-date');
   const tableTarget = target.querySelector<HTMLElement>(
-    "#suppliercart-dynamic-table",
+    '#suppliercart-dynamic-table'
   );
 
   if (
@@ -248,8 +248,8 @@ export function renderSupplierCartPanel(
   const cartDateEl = cartDate;
   const tableTargetEl = tableTarget;
 
-  const cartBaseUrl = "https://www.digikey.ch/de/mylists/list/";
-  let currentCartId = "";
+  const cartBaseUrl = 'https://www.digikey.ch/de/mylists/list/';
+  let currentCartId = '';
 
   function updateOpenButtonState(): void {
     openButtonEl.disabled = !currentCartId;
@@ -260,22 +260,22 @@ export function renderSupplierCartPanel(
       return;
     }
 
-    cartKeyEl.textContent = cartData.cart_key || "";
-    cartDateEl.textContent = cartData.cart_date || "";
-    currentCartId = cartData.ID || "";
+    cartKeyEl.textContent = cartData.cart_key || '';
+    cartDateEl.textContent = cartData.cart_date || '';
+    currentCartId = cartData.ID || '';
     updateOpenButtonState();
     renderTable(tableTargetEl, cartData);
   }
 
-  openButtonEl.addEventListener("click", () => {
+  openButtonEl.addEventListener('click', () => {
     if (!currentCartId) {
       return;
     }
 
     window.open(
       `${cartBaseUrl}${encodeURIComponent(currentCartId)}`,
-      "_blank",
-      "noopener,noreferrer",
+      '_blank',
+      'noopener,noreferrer'
     );
   });
 
@@ -285,28 +285,28 @@ export function renderSupplierCartPanel(
     applyCartData(panelContext.cart);
   }
 
-  transferButtonEl.addEventListener("click", async () => {
+  transferButtonEl.addEventListener('click', async () => {
     if (!panelContext.transfer_url) {
-      showResult(resultEl, "Transfer URL is missing");
+      showResult(resultEl, 'Transfer URL is missing');
       return;
     }
 
-    loaderEl.style.visibility = "visible";
+    loaderEl.style.visibility = 'visible';
 
     try {
       const response = await fetch(panelContext.transfer_url, {
-        method: "GET",
-        credentials: "include",
+        method: 'GET',
+        credentials: 'include'
       });
 
       const cartData = (await response.json()) as CartData;
 
-      showResult(resultEl, cartData.message || "Error");
+      showResult(resultEl, cartData.message || 'Error');
       applyCartData(cartData);
     } catch {
-      showResult(resultEl, "Request failed");
+      showResult(resultEl, 'Request failed');
     } finally {
-      loaderEl.style.visibility = "hidden";
+      loaderEl.style.visibility = 'hidden';
     }
   });
 }
