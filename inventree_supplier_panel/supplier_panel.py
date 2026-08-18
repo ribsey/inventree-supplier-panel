@@ -32,7 +32,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
     PUBLISH_DATE = "2026-08-17T00:00:00"
     DESCRIPTION = "This plugin allows to transfer a PO into a supplier shopping cart."
     VERSION = PLUGIN_VERSION
-    ADMIN_SOURCE = "ui_settings.js:RenderPluginSettings"
+    ADMIN_SOURCE = "Settings.js:RenderPluginSettings"
     COUNTRY_CODES: typing.ClassVar[dict[str, str]] = {
         "AUD": "AU",
         "CAD": "CA",
@@ -241,7 +241,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                                 "title": supplier["name"] + " Actions",
                                 "icon": "fa-cart-shopping",
                                 "source": self.plugin_static_file(
-                                    "panel.js:renderSupplierCartPanel"
+                                    "Panel.js:renderSupplierCartPanel"
                                 ),
                                 "context": {
                                     "order_id": order.pk,
@@ -288,7 +288,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                         "title": "Automatic Supplier parts",
                         "icon": "fa-cart-plus",
                         "source": self.plugin_static_file(
-                            "add_supplierpart_panel.js:renderAddSupplierPartPanel"
+                            "AddSupplierPartPanel.js:renderAddSupplierPartPanel"
                         ),
                         "context": {
                             "part_id": part.pk,
