@@ -1,6 +1,7 @@
 import json
 from urllib.parse import quote
 
+import requests
 from common.models import InvenTreeSetting
 
 from inventree_supplier_panel.meta_access import MetaAccess
@@ -36,7 +37,7 @@ class Digikey:
         response = Wrappers.get_request(self, url, headers=header)
         try:
             response_json = response.json()
-        except Exception:
+        except requests.exceptions.JSONDecodeError:
             part_data['error_status'] = response
             return part_data
         # print(response_json)
@@ -46,7 +47,7 @@ class Digikey:
             if response_json['status'] != 200:
                 part_data['error_status'] = response_json['title'] + response_json['detail']
                 return part_data
-        except Exception:
+        except KeyError:
             pass
         print('Remaining requests:', response.headers['X-RateLimit-Remaining'])
 
@@ -188,7 +189,7 @@ class Digikey:
                 else:
                     try:
                         pack = pack_types[pack_option['PackType']]
-                    except Exception:
+                    except KeyError:
                         pack = pack_option['PackType']
                     cart_items.append({'SKU': pack_option['DigiKeyPartNumber'],
                                        'IPN': p['CustomerReference'],
@@ -264,7 +265,7 @@ class Digikey:
             token['status_code'] = response_json['StatusCode']
             token['message'] = response_json['ErrorDetails']
             return (token)
-        except Exception:
+        except KeyError:
             pass
         print('\033[32mToken refresh SUCCESS\033[0m')
         response_data = response.json()

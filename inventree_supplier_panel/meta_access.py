@@ -7,7 +7,7 @@ class MetaAccess:
     def get_value(self, inventree_object, key):
         try:
             value = inventree_object.metadata[self.NAME][key]
-        except Exception:
+        except KeyError:
             value = None
         return (value)
 

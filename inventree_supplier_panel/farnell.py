@@ -1,3 +1,5 @@
+import requests
+
 from inventree_supplier_panel.request_wrappers import Wrappers
 
 
@@ -22,7 +24,7 @@ class Farnell:
         # of the response
         try:
             response = response.json()
-        except Exception:
+        except requests.exceptions.JSONDecodeError:
             part_data['error_status'] = str(response.content)
             return part_data
 
@@ -31,7 +33,7 @@ class Farnell:
         try:
             part_data['error_status'] = str(response['error'])
             return part_data
-        except Exception:
+        except KeyError:
             pass
         response = response['premierFarnellPartNumberReturn']
 

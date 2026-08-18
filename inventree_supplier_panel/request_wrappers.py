@@ -23,7 +23,7 @@ class Wrappers:
                                      timeout=15,
                                      headers=headers
                                      )
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             self.status_code = e.args
             raise ConnectionError
         return (response)
@@ -43,7 +43,7 @@ class Wrappers:
                                     timeout=15,
                                     headers=headers
                                     )
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             self.status_code = e.args
             raise ConnectionError
         return (response)

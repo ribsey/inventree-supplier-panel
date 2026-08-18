@@ -49,6 +49,7 @@ If you created more than 1000 requests within 24 hours:
 import json
 import re
 
+import requests
 from common.models import InvenTreeSetting
 
 from inventree_supplier_panel.request_wrappers import Wrappers
@@ -68,7 +69,7 @@ class Mouser:
         response = Wrappers.post_request(self, json.dumps(part), url, header)
         try:
             response = response.json()
-        except Exception:
+        except requests.exceptions.JSONDecodeError:
             part_data['error_status'] = response
             return part_data
 
@@ -79,7 +80,7 @@ class Mouser:
         try:
             part_data['error_status'] = response['Message']
             return part_data
-        except Exception:
+        except KeyError:
             pass
 
         # Then we evaluate the Errors array. there are some known errors
@@ -137,7 +138,7 @@ class Mouser:
         package = ''
         try:
             attributes = part_data['ProductAttributes']
-        except Exception:
+        except KeyError:
             return None
         for att in attributes:
             if att['AttributeName'] == att_names['packaging'][self.get_setting('MOUSERLANGUAGE')]:
