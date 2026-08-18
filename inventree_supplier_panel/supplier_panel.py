@@ -197,7 +197,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                             'key': f'{s.lower()}-actions-panel',
                             'title': supplier['name'] + ' Actions',
                             'icon': 'fa-cart-shopping',
-                            'source': self.plugin_static_file('mouser_panel.js:renderSupplierCartPanel'),
+                            'source': self.plugin_static_file('panel.js:renderSupplierCartPanel'),
                             'context': {
                                 'order_id': order.pk,
                                 'transfer_url': reverse('plugin:suppliercart:transfer-cart', kwargs={'pk': order.pk}),
