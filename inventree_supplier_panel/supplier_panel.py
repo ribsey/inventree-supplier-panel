@@ -32,7 +32,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
     PUBLISH_DATE = "2026-08-17T00:00:00"
     DESCRIPTION = "This plugin allows to transfer a PO into a supplier shopping cart."
     VERSION = PLUGIN_VERSION
-    ADMIN_SOURCE = 'ui_settings.js'
+    ADMIN_SOURCE = 'ui_settings.js:RenderPluginSettings'
     COUNTRY_CODES = {'AUD': 'AU',
                      'CAD': 'CA',
                      'CNY': 'CN',
