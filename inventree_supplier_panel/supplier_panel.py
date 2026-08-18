@@ -1,5 +1,7 @@
 import json
+import typing
 from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from common.models import InvenTreeSetting
 from company.models import Company, ManufacturerPart, SupplierPart, SupplierPriceBreak
@@ -31,7 +33,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
     DESCRIPTION = "This plugin allows to transfer a PO into a supplier shopping cart."
     VERSION = PLUGIN_VERSION
     ADMIN_SOURCE = 'ui_settings.js:RenderPluginSettings'
-    COUNTRY_CODES = {'AUD': 'AU',
+    COUNTRY_CODES: typing.ClassVar[dict[str, str]] = {'AUD': 'AU',
                      'CAD': 'CA',
                      'CNY': 'CN',
                      'GBP': 'GB',
@@ -43,74 +45,106 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                      }
     DEFAULT_COUNTRY_CODE = 'US'
 
-    SETTINGS = {
-        'MOUSER_PK': {
-            'name': 'Mouser Supplier ID',
-            'description': 'Primary key of the Mouser supplier',
-            'model': 'company.company',
+    SETTINGS: typing.ClassVar[dict[str, dict[str, typing.Any]]] = {
+        "MOUSER_PK": {
+            "name": "Mouser Supplier ID",
+            "description": "Primary key of the Mouser supplier",
+            "model": "company.company",
         },
-        'DIGIKEY_PK': {
-            'name': 'Digikey Supplier ID',
-            'description': 'Primary key of the Digikey supplier',
-            'model': 'company.company',
+        "DIGIKEY_PK": {
+            "name": "Digikey Supplier ID",
+            "description": "Primary key of the Digikey supplier",
+            "model": "company.company",
         },
-        'FARNELL_PK': {
-            'name': 'Farnell Supplier ID',
-            'description': 'Primary key of the Farnell supplier',
-            'model': 'company.company',
+        "FARNELL_PK": {
+            "name": "Farnell Supplier ID",
+            "description": "Primary key of the Farnell supplier",
+            "model": "company.company",
         },
-        'MOUSERCARTKEY': {
-            'name': 'Mouser cart API key',
-            'description': 'Place here your key for the Mouser shopping cart API',
+        "MOUSERCARTKEY": {
+            "name": "Mouser cart API key",
+            "description": "Place here your key for the Mouser shopping cart API",
         },
-        'MOUSERSEARCHKEY': {
-            'name': 'Mouser search API key',
-            'description': 'Place here your key for the Mouser search API',
+        "MOUSERSEARCHKEY": {
+            "name": "Mouser search API key",
+            "description": "Place here your key for the Mouser search API",
         },
-        'MOUSERLANGUAGE': {
-            'name': 'Mouser language',
-            'description': 'The language that Mouser uses to answer your requests',
-            'choices': [('English', 'Mouser answers in English'),
-                        ('German', 'Mouser answers in German')],
-            'default': 'German',
+        "MOUSERLANGUAGE": {
+            "name": "Mouser language",
+            "description": "The language that Mouser uses to answer your requests",
+            "choices": [
+                ("English", "Mouser answers in English"),
+                ("German", "Mouser answers in German"),
+            ],
+            "default": "German",
         },
-        'FARNELLSEARCHKEY': {
-            'name': 'Farnell search API key',
-            'description': 'Place here your key for the Farnell search API',
+        "FARNELLSEARCHKEY": {
+            "name": "Farnell search API key",
+            "description": "Place here your key for the Farnell search API",
         },
-        'DIGIKEY_CLIENT_ID': {
-            'name': 'Digikey ID',
-            'description': 'Client ID for Digikey',
+        "DIGIKEY_CLIENT_ID": {
+            "name": "Digikey ID",
+            "description": "Client ID for Digikey",
         },
-        'DIGIKEY_CLIENT_SECRET': {
-            'name': 'Digikey Secret',
-            'description': 'Client secret for Digikey',
+        "DIGIKEY_CLIENT_SECRET": {
+            "name": "Digikey Secret",
+            "description": "Client secret for Digikey",
         },
-        'DIGIKEY_TOKEN': {
-            'name': 'Digikey token',
-            'description': 'Token for Digikey',
-            'hidden': True,
+        "DIGIKEY_TOKEN": {
+            "name": "Digikey token",
+            "description": "Token for Digikey",
+            "hidden": True,
         },
-        'DIGIKEY_REFRESH_TOKEN': {
-            'name': 'Digikey refresh token',
-            'description': 'Digikey Refresh token',
-            'hidden': True,
+        "DIGIKEY_REFRESH_TOKEN": {
+            "name": "Digikey refresh token",
+            "description": "Digikey Refresh token",
+            "hidden": True,
         },
-        'PROXY_CON': {
-            'name': 'Proxy CON',
-            'description': 'Connection protocol to proxy server if needed e.g. https',
+        "PROXY_CON": {
+            "name": "Proxy CON",
+            "description": "Connection protocol to proxy server if needed e.g. https",
         },
-        'PROXY_URL': {
-            'name': 'Proxy URL',
-            'description': 'URL to proxy server if needed e.g. http://user:password@ipaddress:port',
+        "PROXY_URL": {
+            "name": "Proxy URL",
+            "description": "URL to proxy server if needed e.g. http://user:password@ipaddress:port",
         },
     }
 
-# ----------------------------------------------------------------------------
-# Here we check the settings and show som status messages. We also construct
-# the Digikey redirect_uri that needs to put into the Digikey web page.
-# If the pk of the supplier is not set ein tne settings, the supplier is
-# disabled. The button for Digikey token creation is also here.
+    REGISTERED_SUPPLIERS: typing.ClassVar[dict[str, dict[str, typing.Any]]] = {
+        "Mouser": {
+            "pk": 0,
+            "name": "Mouser",
+            "po_template": "supplier_panel/mouser.html",
+            "is_registered": False,
+            "get_partdata": Mouser.get_mouser_partdata,
+            "update_cart": Mouser.update_mouser_cart,
+            "create_cart": Mouser.create_mouser_cart,
+        },
+        "Digikey": {
+            "pk": 0,
+            "name": "Digikey",
+            "po_template": "supplier_panel/mouser.html",
+            "is_registered": False,
+            "get_partdata": Digikey.get_digikey_partdata_v4,
+            "update_cart": Digikey.update_digikey_cart,
+            "create_cart": Digikey.create_digikey_cart,
+        },
+        "Farnell": {
+            "pk": 0,
+            "name": "Farnell",
+            "po_template": "supplier_panel/mouser.html",
+            "is_registered": False,
+            "get_partdata": Farnell.get_farnell_partdata,
+            "update_cart": "",
+            "create_cart": Farnell.create_farnell_cart,
+        },
+    }
+
+    # ----------------------------------------------------------------------------
+    # Here we check the settings and show som status messages. We also construct
+    # the Digikey redirect_uri that needs to put into the Digikey web page.
+    # If the pk of the supplier is not set ein tne settings, the supplier is
+    # disabled. The button for Digikey token creation is also here.
 
     def get_admin_context(self):
         base_url = InvenTreeSetting.get_setting('INVENTREE_BASE_URL') or ''
@@ -139,25 +173,28 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
             'oauth_authorize_url': 'https://api.digikey.com/v1/oauth2/authorize',
         }
 
-# ----------------------------------------------------------------------------
-# Create custom panels for the new UserInterfaceMixin implementation.
+    # ----------------------------------------------------------------------------
+    # Create custom panels for the new UserInterfaceMixin implementation.
 
     def _update_registered_suppliers(self):
         try:
-            self.registered_suppliers['Mouser']['pk'] = int(self.get_setting('MOUSER_PK'))
-            self.registered_suppliers['Mouser']['is_registered'] = True
-        except Exception:
-            self.registered_suppliers['Mouser']['is_registered'] = False
+            self.REGISTERED_SUPPLIERS['Mouser']['pk'] = int(
+                self.get_setting('MOUSER_PK'))
+            self.REGISTERED_SUPPLIERS['Mouser']['is_registered'] = True
+        except ValueError:
+            self.REGISTERED_SUPPLIERS['Mouser']['is_registered'] = False
         try:
-            self.registered_suppliers['Digikey']['pk'] = int(self.get_setting('DIGIKEY_PK'))
-            self.registered_suppliers['Digikey']['is_registered'] = True
-        except Exception:
-            self.registered_suppliers['Digikey']['is_registered'] = False
+            self.REGISTERED_SUPPLIERS['Digikey']['pk'] = int(
+                self.get_setting('DIGIKEY_PK'))
+            self.REGISTERED_SUPPLIERS['Digikey']['is_registered'] = True
+        except ValueError:
+            self.REGISTERED_SUPPLIERS['Digikey']['is_registered'] = False
         try:
-            self.registered_suppliers['Farnell']['pk'] = int(self.get_setting('FARNELL_PK'))
-            self.registered_suppliers['Farnell']['is_registered'] = True
-        except Exception:
-            self.registered_suppliers['Farnell']['is_registered'] = False
+            self.REGISTERED_SUPPLIERS['Farnell']['pk'] = int(
+                self.get_setting('FARNELL_PK'))
+            self.REGISTERED_SUPPLIERS['Farnell']['is_registered'] = True
+        except ValueError:
+            self.REGISTERED_SUPPLIERS['Farnell']['is_registered'] = False
 
     def get_ui_panels(self, request, context, **kwargs):
         panels = []
@@ -167,7 +204,7 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
 
         try:
             target_id = int(target_id)
-        except Exception:
+        except ValueError:
             target_id = None
 
         self._update_registered_suppliers()
@@ -180,14 +217,15 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                 order = None
 
             has_permission = (
-                check_user_role(request.user, 'purchase_order', 'change') or check_user_role(request.user, 'purchase_order', 'delete') or check_user_role(request.user, 'purchase_order', 'add')
+                check_user_role(request.user, 'purchase_order', 'change') or check_user_role(
+                    request.user, 'purchase_order', 'delete') or check_user_role(request.user, 'purchase_order', 'add')
             )
 
             if order and has_permission:
                 cart_data = MetaAccess.get_value(self, order, 'cart')
 
-                for s in self.registered_suppliers:
-                    supplier = self.registered_suppliers[s]
+                for s in self.REGISTERED_SUPPLIERS:
+                    supplier = self.REGISTERED_SUPPLIERS[s]
                     if supplier['is_registered'] and order.supplier.pk == supplier['pk']:
                         panels.append({
                             'key': f'{s.lower()}-actions-panel',
@@ -209,19 +247,22 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                 part = None
 
             has_permission = (
-                check_user_role(request.user, 'part', 'change') or check_user_role(request.user, 'part', 'delete') or check_user_role(request.user, 'part', 'add')
+                check_user_role(request.user, 'part', 'change') or check_user_role(
+                    request.user, 'part', 'delete') or check_user_role(request.user, 'part', 'add')
             )
 
-            show_panel = any(s['is_registered'] for s in self.registered_suppliers.values())
+            show_panel = any(s['is_registered']
+                             for s in self.REGISTERED_SUPPLIERS.values())
 
             if part and has_permission and show_panel and part.purchaseable:
                 manufacturer_parts = list(
-                    ManufacturerPart.objects.filter(part=part.pk).values('pk', 'MPN')
+                    ManufacturerPart.objects.filter(
+                        part=part.pk).values('pk', 'MPN')
                 )
 
                 supplier_list = [
                     {'pk': data['pk'], 'name': data['name']}
-                    for data in self.registered_suppliers.values()
+                    for data in self.REGISTERED_SUPPLIERS.values()
                     if data['is_registered']
                 ]
 
@@ -243,43 +284,51 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
     def setup_urls(self):
         return [
             # This one is for the Digikey OAuth callback
-            re_path(r'^digikeytoken/', self.receive_authcode, name='digikeytoken'),
+            re_path(r'^digikeytoken/', self.receive_authcode,
+                    name='digikeytoken'),
 
             # Now for the plugin
-            re_path(r'transfercart/(?P<pk>\d+)/', self.transfer_cart, name='transfer-cart'),
-            re_path(r'addsupplierpart(?:\.(?P<format>json))?$', self.add_supplierpart, name='add-supplierpart'),
+            re_path(r'transfercart/(?P<pk>\d+)/',
+                    self.transfer_cart, name='transfer-cart'),
+            re_path(r'addsupplierpart(?:\.(?P<format>json))?$',
+                    self.add_supplierpart, name='add-supplierpart'),
         ]
 
-# --------------------------- get_partdata ------------------------------------
-# This is just the wrapper that selects the proper supplier dependant function
+    # --------------------------- get_partdata ------------------------------------
+    # This is just the wrapper that selects the proper supplier dependant function
     def get_partdata(self, supplier, sku, options):
 
         try:
-            self.registered_suppliers['Mouser']['pk'] = int(self.get_setting('MOUSER_PK'))
-        except Exception:
+            self.REGISTERED_SUPPLIERS['Mouser']['pk'] = int(
+                self.get_setting('MOUSER_PK'))
+        except ValueError:
             pass
         try:
-            self.registered_suppliers['Digikey']['pk'] = int(self.get_setting('DIGIKEY_PK'))
-        except Exception:
+            self.REGISTERED_SUPPLIERS['Digikey']['pk'] = int(
+                self.get_setting('DIGIKEY_PK'))
+        except ValueError:
             pass
         try:
-            self.registered_suppliers['Farnell']['pk'] = int(self.get_setting('FARNELL_PK'))
-        except Exception:
+            self.REGISTERED_SUPPLIERS['Farnell']['pk'] = int(
+                self.get_setting('FARNELL_PK'))
+        except ValueError:
             pass
 
         part_data = {}
-        for s in self.registered_suppliers:
-            if supplier == self.registered_suppliers[s]['pk']:
-                part_data = self.registered_suppliers[s]['get_partdata'](self, sku, options)
+        for s in self.REGISTERED_SUPPLIERS:
+            if supplier == self.REGISTERED_SUPPLIERS[s]['pk']:
+                part_data = self.REGISTERED_SUPPLIERS[s]['get_partdata'](
+                    self, sku, options)
         return part_data
 
-# --------------------------- receive_authcode --------------------------------
-# This creates the Digikey token from the authcode
+    # --------------------------- receive_authcode --------------------------------
+    # This creates the Digikey token from the authcode
 
     def receive_authcode(self, request):
         auth_code = request.GET.get('code')
         url = 'https://api.digikey.com/v1/oauth2/token'
-        redirect_uri = InvenTreeSetting.get_setting('INVENTREE_BASE_URL') + '/' + self.base_url + 'digikeytoken/'
+        redirect_uri = InvenTreeSetting.get_setting(
+            'INVENTREE_BASE_URL') + '/' + self.base_url + 'digikeytoken/'
         url_data = {
             'code': auth_code,
             'client_id': self.get_setting('DIGIKEY_CLIENT_ID'),
@@ -293,14 +342,15 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
             print('\033[32mAccess Token get SUCCESS\033[0m')
             response_data = response.json()
             self.set_setting('DIGIKEY_TOKEN', response_data['access_token'])
-            self.set_setting('DIGIKEY_REFRESH_TOKEN', response_data['refresh_token'])
+            self.set_setting('DIGIKEY_REFRESH_TOKEN',
+                             response_data['refresh_token'])
             return HttpResponse('New Digikey token successfully received')
         else:
             print('\033[31m\033[1mReceive access token FAILED\033[0m')
             return HttpResponse(response.content)
 
-# --------------------------- transfer_cart ------------------------------------
-# This is called when the button is pressed and does most of the work.
+    # --------------------------- transfer_cart ------------------------------------
+    # This is called when the button is pressed and does most of the work.
 
     def transfer_cart(self, request, pk):
 
@@ -308,28 +358,32 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
         order = PurchaseOrder.objects.filter(id=pk).all()[0]
         supplier = None
         try:
-            self.registered_suppliers['Mouser']['pk'] = int(self.get_setting('MOUSER_PK'))
-        except Exception:
+            self.REGISTERED_SUPPLIERS['Mouser']['pk'] = int(
+                self.get_setting('MOUSER_PK'))
+        except ValueError:
             pass
         try:
-            self.registered_suppliers['Digikey']['pk'] = int(self.get_setting('DIGIKEY_PK'))
-        except Exception:
+            self.REGISTERED_SUPPLIERS['Digikey']['pk'] = int(
+                self.get_setting('DIGIKEY_PK'))
+        except ValueError:
             pass
-        for s in self.registered_suppliers:
-            if order.supplier.pk == self.registered_suppliers[s]['pk']:
+        for s in self.REGISTERED_SUPPLIERS:
+            if order.supplier.pk == self.REGISTERED_SUPPLIERS[s]['pk']:
                 supplier = s
 
         if supplier is None:
             return JsonResponse({'error_status': 'Supplier not configured', 'message': 'Supplier not configured'})
 
         # First create the shopping cart
-        cart_data = self.registered_suppliers[supplier]['create_cart'](self, order)
+        cart_data = self.REGISTERED_SUPPLIERS[supplier]['create_cart'](
+            self, order)
         if cart_data['error_status'] != 'OK':
             cart_data['message'] = cart_data['error_status']
             return JsonResponse(cart_data)
 
         # Then fill it
-        cart_data = self.registered_suppliers[supplier]['update_cart'](self, order, cart_data['ID'])
+        cart_data = self.REGISTERED_SUPPLIERS[supplier]['update_cart'](
+            self, order, cart_data['ID'])
         if cart_data['error_status'] != 'OK':
             cart_data['message'] = cart_data['error_status']
             return JsonResponse(cart_data)
@@ -342,11 +396,20 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                     po_item.save()
         cart_data['message'] = 'OK'
         cart_data['pk'] = pk
-        cart_data['cart_date'] = datetime.today().strftime('%Y-%m-%d')
+        timezone_name = InvenTreeSetting.get_setting(
+            'INVENTREE_TIMEZONE') or 'UTC'
+
+        try:
+            timezone_info = ZoneInfo(timezone_name)
+        except ZoneInfoNotFoundError:
+            timezone_info = ZoneInfo('UTC')
+
+        cart_data['cart_date'] = datetime.now(
+            timezone_info).strftime('%Y-%m-%d')
         MetaAccess.set_value(self, order, 'cart', cart_data)
         return JsonResponse(cart_data)
 
-# ---------------------------- add_supplierpart -------------------------------
+    # ---------------------------- add_supplierpart -------------------------------
     def add_supplierpart(self, request):
         rdata = json.loads(request.body)
         part = Part.objects.filter(id=rdata['pk'])[0]
@@ -354,7 +417,8 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
         rdata['sku'] = rdata['sku'].strip()
         if (rdata['sku'] == ''):
             return JsonResponse({"message": "Please provide part number"})
-        manufacturer_part = ManufacturerPart.objects.filter(id=rdata['mpart'])[0]
+        manufacturer_part = ManufacturerPart.objects.filter(id=rdata['mpart'])[
+            0]
         supplier_parts = SupplierPart.objects.filter(part=rdata['pk'])
         for sp in supplier_parts:
             if sp.SKU.strip() == rdata['sku']:
@@ -379,32 +443,6 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
                                          description=data['description'],
                                          )
         for pb in data['price_breaks']:
-            SupplierPriceBreak.objects.create(part=sp, quantity=pb['Quantity'], price=pb['Price'], price_currency=pb['Currency'])
+            SupplierPriceBreak.objects.create(
+                part=sp, quantity=pb['Quantity'], price=pb['Price'], price_currency=pb['Currency'])
         return JsonResponse({"message": "OK"})
-
-# ---------------------------- Define the suppliers ----------------------------
-    registered_suppliers = {'Mouser': {'pk': 0,
-                                       'name': 'Mouser',
-                                       'po_template': 'supplier_panel/mouser.html',
-                                       'is_registered': False,
-                                       'get_partdata': Mouser.get_mouser_partdata,
-                                       'update_cart': Mouser.update_mouser_cart,
-                                       'create_cart': Mouser.create_mouser_cart,
-                                       },
-                            'Digikey': {'pk': 0,
-                                        'name': 'Digikey',
-                                        'po_template': 'supplier_panel/mouser.html',
-                                        'is_registered': False,
-                                        'get_partdata': Digikey.get_digikey_partdata_v4,
-                                        'update_cart': Digikey.update_digikey_cart,
-                                        'create_cart': Digikey.create_digikey_cart,
-                                        },
-                            'Farnell': {'pk': 0,
-                                        'name': 'Farnell',
-                                        'po_template': 'supplier_panel/mouser.html',
-                                        'is_registered': False,
-                                        'get_partdata': Farnell.get_farnell_partdata,
-                                        'update_cart': '',
-                                        'create_cart': Farnell.create_farnell_cart,
-                                        }
-                            }
