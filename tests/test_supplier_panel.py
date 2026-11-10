@@ -5,8 +5,8 @@ from httmock import HTTMock, response, urlmatch
 from plugin import InvenTreePlugin
 from plugin.mixins import SettingsMixin
 
-from .farnell import Farnell
-from .mouser import Mouser
+from ..inventree_supplier_panel.farnell import Farnell
+from ..inventree_supplier_panel.mouser import Mouser
 
 
 class TestCartPlugin(TestCase, SettingsMixin, InvenTreePlugin):

@@ -19,7 +19,7 @@ license = "MIT"
 keywords = ["inventree", "plugin"]
 requires-python = ">=3.9"
 dependencies = [
-    # Enter your plugin library dependencies here
+    "cryptography>=43",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -34,6 +34,7 @@ SupplierCartPanel = "inventree_supplier_panel.supplier_panel:SupplierCartPanel"
 
 [tool.setuptools.packages.find]
 where = [""]
+exclude = ["tests*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "inventree_supplier_panel.version.PLUGIN_VERSION"}

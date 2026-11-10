@@ -14,10 +14,10 @@ from plugin.mixins import SettingsMixin, UrlsMixin, UserInterfaceMixin
 from users.permissions import check_user_role
 
 from .digikey import Digikey
+from .digikey_auth import DigikeyAuth, DigikeyAuthError
 from .farnell import Farnell
 from .meta_access import MetaAccess
 from .mouser import Mouser
-from .request_wrappers import Wrappers
 from .version import PLUGIN_VERSION
 
 
@@ -89,17 +89,26 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
         },
         "DIGIKEY_CLIENT_SECRET": {
             "name": "Digikey Secret",
-            "description": "Client secret for Digikey",
+            "description": "Client secret for Digikey (moved to encrypted storage on first successful use). Alternatively set DIGIKEY_CLIENT_SECRET on the server.",
+            "protected": True,
         },
         "DIGIKEY_TOKEN": {
             "name": "Digikey token",
             "description": "Token for Digikey",
             "hidden": True,
+            "protected": True,
         },
         "DIGIKEY_REFRESH_TOKEN": {
             "name": "Digikey refresh token",
             "description": "Digikey Refresh token",
             "hidden": True,
+            "protected": True,
+        },
+        "DIGIKEY_CREDENTIALS": {
+            "name": "Encrypted DigiKey credentials",
+            "description": "Managed by the plugin. Do not edit.",
+            "hidden": True,
+            "protected": True,
         },
         "PROXY_CON": {
             "name": "Proxy CON",
@@ -353,32 +362,21 @@ class SupplierCartPanel(UserInterfaceMixin, SettingsMixin, InvenTreePlugin, Urls
     # This creates the Digikey token from the authcode
 
     def receive_authcode(self, request):
-        auth_code = request.GET.get("code")
-        url = "https://api.digikey.com/v1/oauth2/token"
-        redirect_uri = (
-            InvenTreeSetting.get_setting("INVENTREE_BASE_URL")
-            + "/"
-            + self.base_url
-            + "digikeytoken/"
-        )
-        url_data = {
-            "code": auth_code,
-            "client_id": self.get_setting("DIGIKEY_CLIENT_ID"),
-            "client_secret": self.get_setting("DIGIKEY_CLIENT_SECRET"),
-            "redirect_uri": redirect_uri,
-            "grant_type": "authorization_code",
-        }
-        header = {}
-        response = Wrappers.post_request(self, url_data, url, headers=header)
-        if response.status_code == 200:
-            print("\033[32mAccess Token get SUCCESS\033[0m")
-            response_data = response.json()
-            self.set_setting("DIGIKEY_TOKEN", response_data["access_token"])
-            self.set_setting("DIGIKEY_REFRESH_TOKEN", response_data["refresh_token"])
-            return HttpResponse("New Digikey token successfully received")
-        else:
-            print("\033[31m\033[1mReceive access token FAILED\033[0m")
-            return HttpResponse(response.content)
+        if not request.user.is_authenticated or not request.user.is_staff:
+            return HttpResponse(
+                "Administrator access is required to authorize DigiKey.", status=403
+            )
+        base_url = InvenTreeSetting.get_setting("INVENTREE_BASE_URL") or ""
+        if not base_url:
+            return HttpResponse(
+                "Configure the server Base URL before authorizing DigiKey.", status=400
+            )
+        redirect_uri = f"{base_url.rstrip('/')}/{self.base_url}digikeytoken/"
+        try:
+            DigikeyAuth(self).authorize(request.GET.get("code"), redirect_uri)
+        except DigikeyAuthError as error:
+            return HttpResponse(str(error), status=400)
+        return HttpResponse("New Digikey token successfully received")
 
     # --------------------------- transfer_cart ------------------------------------
     # This is called when the button is pressed and does most of the work.

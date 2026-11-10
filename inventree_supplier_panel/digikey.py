@@ -4,6 +4,7 @@ from urllib.parse import quote
 import requests
 from common.models import InvenTreeSetting
 
+from inventree_supplier_panel.digikey_auth import DigikeyAuth, DigikeyAuthError
 from inventree_supplier_panel.meta_access import MetaAccess
 from inventree_supplier_panel.request_wrappers import Wrappers
 
@@ -30,7 +31,7 @@ class Digikey:
             self.DEFAULT_COUNTRY_CODE,
         )
         header = {
-            "Authorization": f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",
+            "Authorization": f"Bearer {token['access_token']}",
             "X-DIGIKEY-Client-Id": self.get_setting("DIGIKEY_CLIENT_ID"),
             "Content-Type": "application/json",
             "X-DIGIKEY-Locale-Currency": InvenTreeSetting.get_setting(
@@ -111,7 +112,7 @@ class Digikey:
             return cart_data
         list_name = order.reference + "-" + str(version).zfill(2)
         i = version
-        while not Digikey.check_valid_listname(self, list_name):
+        while not Digikey.check_valid_listname(self, list_name, token["access_token"]):
             i = i + 1
             list_name = order.reference + "-" + str(i).zfill(2)
             if i == version + 20:
@@ -123,7 +124,7 @@ class Digikey:
         MetaAccess.set_value(self, order, "DigiKeyListName", list_name)
         url = "https://api.digikey.com/mylists/v1/lists"
         header = {
-            "Authorization": f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",
+            "Authorization": f"Bearer {token['access_token']}",
             "X-DIGIKEY-Client-Id": self.get_setting("DIGIKEY_CLIENT_ID"),
             "Content-Type": "application/json",
         }
@@ -137,10 +138,10 @@ class Digikey:
         return cart_data
 
     # Error status not checked !!!
-    def check_valid_listname(self, list_name):
+    def check_valid_listname(self, list_name, access_token):
         url = f"https://api.digikey.com/mylists/v1/lists/validate/{list_name}"
         header = {
-            "Authorization": f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",
+            "Authorization": f"Bearer {access_token}",
             "X-DIGIKEY-Client-Id": self.get_setting("DIGIKEY_CLIENT_ID"),
             "accept": "application/json",
         }
@@ -153,6 +154,9 @@ class Digikey:
 
     def update_digikey_cart(self, order, list_id):
 
+        token = Digikey.refresh_digikey_access_token(self)
+        if token["status_code"] != 200:
+            return {"error_status": token["message"]}
         pack_types = {
             "TR": "full reel",
             "DKR": "DigiReel",
@@ -161,7 +165,7 @@ class Digikey:
         }
         url = f"https://api.digikey.com/mylists/v1/lists/{list_id}/parts"
         header = {
-            "Authorization": f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",
+            "Authorization": f"Bearer {token['access_token']}",
             "X-DIGIKEY-Client-Id": self.get_setting("DIGIKEY_CLIENT_ID"),
             "accept": "application/json",
             "Content-Type": "application/json",
@@ -184,7 +188,7 @@ class Digikey:
         Wrappers.post_request(self, json.dumps(cart_items), url, header)
 
         # Now we get the parts from the generated list
-        parts_in_list = Digikey.get_parts_in_list(self, list_id)
+        parts_in_list = Digikey.get_parts_in_list(self, list_id, token["access_token"])
         # print(parts_in_list)
         cart_items = []
         merchandise_total = 0
@@ -273,12 +277,12 @@ class Digikey:
         return shopping_cart
 
     # ------------------------------- get_parts_in_list ----------------------
-    def get_parts_in_list(self, list_id):
+    def get_parts_in_list(self, list_id, access_token):
         currency_code = InvenTreeSetting.get_setting("INVENTREE_DEFAULT_CURRENCY")
         country_code = self.COUNTRY_CODES.get(currency_code, self.DEFAULT_COUNTRY_CODE)
         url = f"https://api.digikey.com/mylists/v1/lists/{list_id}/parts/?countryIso={country_code}&currencyIso={currency_code}&languageIso={country_code}"
         header = {
-            "Authorization": f"{'Bearer'} {self.get_setting('DIGIKEY_TOKEN')}",
+            "Authorization": f"Bearer {access_token}",
             "X-DIGIKEY-Client-Id": self.get_setting("DIGIKEY_CLIENT_ID"),
             "accept": "application/json",
         }
@@ -289,35 +293,8 @@ class Digikey:
 
     # -------------------- Here starts the digikey token stuff --------------------
     def refresh_digikey_access_token(self):
-
-        url = "https://api.digikey.com/v1/oauth2/token"
-        client_id = self.get_setting("DIGIKEY_CLIENT_ID")
-        client_secret = self.get_setting("DIGIKEY_CLIENT_SECRET")
-        refresh_token = self.get_setting("DIGIKEY_REFRESH_TOKEN")
-        url_data = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "refresh_token": refresh_token,
-            "grant_type": "refresh_token",
-        }
-        header = {}
-        token = {}
-        response = Wrappers.post_request(self, url_data, url, headers=header)
-        response_json = response.json()
-
-        # On success there is no StatusCode, just in error case
         try:
-            token["status_code"] = response_json["StatusCode"]
-            token["message"] = response_json["ErrorDetails"]
-            return token
-        except KeyError:
-            pass
-        print("\033[32mToken refresh SUCCESS\033[0m")
-        response_data = response.json()
-        self.set_setting("DIGIKEY_TOKEN", response_data.get("access_token"))
-        self.set_setting("DIGIKEY_REFRESH_TOKEN", response_data.get("refresh_token"))
-        token["status_code"] = response.status_code
-        token["message"] = "success"
-        token["access_token"] = response_data.get("access_token")
-        token["refresh_token"] = response_data.get("refresh_token")
-        return token
+            access_token = DigikeyAuth(self).access_token()
+        except DigikeyAuthError as error:
+            return {"status_code": 400, "message": str(error)}
+        return {"status_code": 200, "message": "success", "access_token": access_token}

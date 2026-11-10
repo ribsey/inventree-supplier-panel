@@ -63,3 +63,9 @@ jobs:
       - name: Style Checks
         run: |
           ruff check
+
+      - name: Install OAuth test dependencies
+        run: pip install -e . django requests
+
+      - name: Test DigiKey OAuth lifecycle
+        run: python -m unittest discover -s tests -p test_digikey_auth.py -v

@@ -46,11 +46,14 @@ Place here your Farnell key for part search.
 
 ### Digikey ID and Digikey Secret
 This is the client ID and the client secret that has been generated in the Digkey API admin WEB portal.
-Copy it from there to the InvenTree settings.
+Copy the client ID to the InvenTree settings. Prefer supplying the secret through the
+server environment variable `DIGIKEY_CLIENT_SECRET`. Alternatively enter it in the
+protected Digikey Secret setting; the plugin moves it to encrypted storage and clears
+that setting on the first successful DigiKey operation.
 
 ### Digikey token and Digikey refresh token
-These fields are filled automatically. The Digikey API requires two tokens with different life times.
-Please refer to the Digikey section for more information. Do not edit those.
+Tokens are managed automatically in encrypted server-side storage. The old token
+settings are retained only for migration. Do not edit them.
 
 ### Proxy CON
 Protocol to proxy server e.g. https
@@ -153,7 +156,27 @@ The Callback URL is what you need to put into the Digikey page.
 In Production products section make sure that Product information and MyLists is activated.
 
 In the View tab of your app you find the Client-ID and the Client-Secret. Place those in
-the plugin settings.
+the plugin settings, or supply the secret using `DIGIKEY_CLIENT_SECRET`.
+
+Before authorizing, generate a dedicated encryption key in the server Python environment:
+
+```
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Set the result as `DIGIKEY_CREDENTIAL_KEY` in the environment of **every** web and
+background worker, then restart those workers. Keep this key outside the database,
+source control, and frontend. Store it in your deployment secret manager and back it
+up separately: losing or changing it makes existing credentials unreadable.
+There is deliberately no plaintext fallback or automatically generated per-worker key.
+
+Existing tokens and a settings-based client secret are migrated into one encrypted
+bundle on the first successful operation, and the old plaintext settings are cleared
+in the same database transaction. A token with no saved expiry is refreshed once.
+Migration does not remove plaintext from historical database backups, audit records,
+or old caches; retire those according to your retention policy and restart workers.
+Use encrypted backups, restrict database access, and do not log OAuth request bodies,
+authorization headers, or callback query strings.
 
 Digikey Supplierparts have to by in your InvenTree Database as described already in
 the Mouser section.
@@ -176,14 +199,21 @@ The plugin has a button in the settings that initiates the first step. It opens 
 where you enter your credentials. When the OAuth callback is properly set the URL
 ...plugin/suppliercart/digikeytoken/ is called. This triggers a call to
 https://api.digikey.com/v1/oauth2/token from where the plugin get the tokens. The tokens
-are stored in the plugin setting area. Do not change them manually.
+are encrypted together with their expiry in a protected, hidden plugin setting.
+Do not change it manually. The callback requires an authenticated administrator.
 Make sure that the Base-URL is properly set in the InvenTree server settings. The
 plugin constructs the authentication callback using this.
 
-Each time you transfer a PO the refresh token is called independently from the
-tokens live time. This also refreshes the refresh token. So you are save when
-you use the plugin ate least once in 90 days. In case the token gets bad you need to
-create a fresh set using the token button again.
+Product searches and cart operations reuse the access token until it is within
+60 seconds of expiry. The actual lifetime comes from DigiKey's `expires_in` response.
+Refreshes are serialized through the shared InvenTree database, including across
+workers; the replacement access token, rotating refresh token, and expiry are saved
+together before releasing the lock. No scheduled refresh job is required.
+
+Failed or malformed token responses leave the stored credentials unchanged and show
+a safe error message. If authorization is revoked or the refresh token is rejected,
+create a fresh set using the token button again. Refresh tokens are not assumed to
+remain valid forever.
 
 If you are confused now read the documentation on the Digikey WEB page for more details.
 
